@@ -24,25 +24,3 @@ Entries are sorted by start time and processed in order, building a result list.
    - **Both are long** → no merge; push `cur` as a new entry.
 
 A merged entry keeps an `isShort` flag that stays `true` only as long as it was built exclusively from short pieces. The first long task that joins it flips the flag to `false`, which is what makes case 3a work for chains like `short → short → long`.
-
-### Worked examples
-
-Long = `L`, Short = `S`, contiguous = no gap or gap < 10 min, gap = ≥ 10 min:
-
-| Input sequence                 | Result                                                |
-|--------------------------------|-------------------------------------------------------|
-| `L1, S, L2` (all contiguous)   | `L1` extended to cover `S`, then `L2` separate        |
-| `L1, S, L2` with `L1—S` gap    | `L1`, `S` (kept alone), `L2` |
-| `S, L1` contiguous             | `L1` with `start` pulled back to `S.start`             |
-| `S1, S2, L1` all contiguous    | `S1+S2` first merge into one short, then `L1` absorbs it: one entry spanning `S1.start → L1.end` |
-| `S1, S2` contiguous, no `L`    | A single merged short entry `S1.start → S2.end`        |
-| `S1, S2` with gap between      | Both kept separately                                   |
-| `L1, L2` contiguous            | Untouched — two long entries are never combined      |
-| First entry of the day is `S`  | Stays alone unless the **next** entry is adjacent and long, in which case the long absorbs it |
-| Last entry of the day is `S`   | Already absorbed if the previous entry was adjacent; otherwise stays alone |
-
-### Why this shape
-
-- **Don't fill real pauses.** Bridging a 30-minute coffee break would inflate working time. The 10-minute threshold is the practical cutoff between "noise between flips" and "I stepped away".
-- **Long labels dominate.** When a short and a long meet, the long task's `SUMMARY` is almost always the meaningful one, so it survives the merge.
-- **Chains collapse correctly.** Multiple shorts in a row first roll up into one short block, which a neighboring long can then absorb in a single step.
