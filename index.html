@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>Timeflip Events</title>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<style>
+    html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video{margin:0;padding:0;border:0;font:inherit;font-size:100%;vertical-align:baseline}html{line-height:1}ol,ul{list-style:none}table{border-collapse:collapse;border-spacing:0}caption,th,td{text-align:left;font-weight:normal;vertical-align:middle}q,blockquote{quotes:none}q:before,q:after,blockquote:before,blockquote:after{content:"";content:none}a img{border:none}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}*{-moz-box-sizing:border-box;-webkit-box-sizing:border-box;box-sizing:border-box}html{font-size:87.5%;line-height:1.57143em}html{font-size:14px;line-height:1.6em;-webkit-text-size-adjust:100%}body{background:#fcfcfc;color:#545454;text-rendering:optimizeLegibility;font-family:"AvenirNext-Regular"}a{color:#de4c4f;text-decoration:none}h1{font-family:"AvenirNext-Medium";color:#333;font-size:1.6em;line-height:1.3em;margin-bottom:.78571em}h2{font-family:"AvenirNext-Medium";color:#333;font-size:1.3em;line-height:1em;margin-bottom:.62857em}h3{font-family:"AvenirNext-Medium";color:#333;font-size:1.15em;line-height:1em;margin-bottom:.47143em}p{margin-bottom:1.57143em;hyphens:auto}hr{height:1px;border:0;background-color:#dedede;margin:-1px auto 1.57143em auto}ul,ol{margin-bottom:.31429em}ul ul,ul ol,ol ul,ol ol{margin-bottom:0px}ol{counter-reset:ol_counter}ol li:before{content:counter(ol_counter) ".";counter-increment:ol_counter;color:#e06e73;text-align:right;display:inline-block;min-width:1em;margin-right:0.5em}b,strong{font-family:"AvenirNext-Bold"}i,em{font-family:"AvenirNext-Italic"}code{font-family:"Menlo-Regular"}.text-overflow-ellipsis{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sf_code_string,.sf_code_selector,.sf_code_attr-name,.sf_code_char,.sf_code_builtin,.sf_code_inserted{color:#D33905}.sf_code_comment,.sf_code_prolog,.sf_code_doctype,.sf_code_cdata{color:#838383}.sf_code_number,.sf_code_boolean{color:#0E73A2}.sf_code_keyword,.sf_code_atrule,.sf_code_rule,.sf_code_attr-value,.sf_code_function,.sf_code_class-name,.sf_code_class,.sf_code_regex,.sf_code_important,.sf_code_variable,.sf_code_interpolation{color:#0E73A2}.sf_code_property,.sf_code_tag,.sf_code_constant,.sf_code_symbol,.sf_code_deleted{color:#1B00CE}.sf_code_macro,.sf_code_entity,.sf_code_operator,.sf_code_url{color:#920448}.note-wrapper{max-width:60em;margin:0px auto;padding:1.57143em 3.14286em}.note-wrapper.spotlight-preview{overflow-x:hidden}u{text-decoration:none;background-image:linear-gradient(to bottom, rgba(0,0,0,0) 50%,#e06e73 50%);background-repeat:repeat-x;background-size:2px 2px;background-position:0 1.05em}s{color:#878787}p{margin-bottom:0.1em}hr{margin-bottom:0.7em;margin-top:0.7em}ul li{text-indent:-0.35em}ul li:before{content:"•";color:#e06e73;display:inline-block;margin-right:0.3em}ul ul{margin-left:1.25714em}ol li{text-indent:-1.45em}ol ol{margin-left:1.25714em}blockquote{display:block;margin-left:-1em;padding-left:0.8em;border-left:0.2em solid #e06e73}.todo-list ul{margin-left:1.88571em}.todo-list li{text-indent:-1.75em}.todo-list li:before{content:"";display:static;margin-right:0px}.todo-checkbox{text-indent:-1.7em}.todo-checkbox svg{margin-right:0.3em;position:relative;top:0.2em}.todo-checkbox svg #check{display:none}.todo-checkbox.todo-checked #check{display:inline}.todo-checkbox.todo-checked+.todo-text{text-decoration:line-through;color:#878787}.code-inline{display:inline;background:white;border:solid 1px #dedede;padding:0.2em 0.5em;font-size:0.9em}.code-multiline{display:block;background:white;border:solid 1px #dedede;padding:0.7em 1em;font-size:0.9em;overflow-x:auto}.hashtag{display:inline-block;color:white;background:#b8bfc2;padding:0.0em 0.5em;border-radius:1em;text-indent:0}.hashtag a{color:#fff}.address a{color:#545454;background-image:linear-gradient(to bottom, rgba(0,0,0,0) 50%,#0da35e 50%);background-repeat:repeat-x;background-size:2px 2px;background-position:0 1.05em}.address svg{position:relative;top:0.2em;display:inline-block;margin-right:0.2em}.color-preview{display:inline-block;width:1em;height:1em;border:solid 1px rgba(0,0,0,0.3);border-radius:50%;margin-right:0.1em;position:relative;top:0.2em;white-space:nowrap}.color-code{margin-right:0.2em;font-family:"Menlo-Regular";font-size:0.9em}.color-hash{opacity:0.4}.ordered-list-number{color:#e06e73;text-align:right;display:inline-block;min-width:1em}.arrow svg{position:relative;top:0.08em;display:inline-block;margin-right:0.15em;margin-left:0.15em}.arrow svg #rod{stroke:#545454}.arrow svg #point{fill:#545454}mark{color:inherit;display:inline;padding:0.2em 0.5em;background-color:#fcffc0}img{max-width:100%;height:auto}
+
+    .controls{display:flex;gap:1em;align-items:flex-end;flex-wrap:wrap;margin-bottom:1em}
+    .controls:last-of-type{margin-bottom:1.5em}
+    .control{display:flex;flex-direction:column}
+    .control.grow{flex:1;min-width:18em}
+    .control.inline{flex-direction:row;align-items:center;gap:.4em;padding-bottom:.4em}
+    .control.inline label{margin-bottom:0;color:#545454;font-family:"AvenirNext-Regular"}
+    .control.inline input{cursor:pointer}
+    .control label{font-size:.85em;color:#878787;margin-bottom:.2em;font-family:"AvenirNext-Medium"}
+    .control input{font:inherit;padding:.45em .6em;border:1px solid #dedede;background:#fff;color:#545454}
+    .control input:focus{outline:none;border-color:#de4c4f}
+    .btn{font:inherit;font-family:"AvenirNext-Medium";padding:.55em 1.2em;border:0;background:#de4c4f;color:#fff;cursor:pointer}
+    .btn:hover{background:#c43a3d}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    table{width:100%;border-collapse:collapse;margin-bottom:1em}
+    th{font-family:"AvenirNext-Medium";color:#333;border-bottom:2px solid #dedede;padding:.55em .6em;font-size:.95em}
+    td{padding:.5em .6em;border-bottom:1px solid #ededed;vertical-align:top}
+    tbody tr:hover td{background:#fafafa}
+    td.task{font-family:"AvenirNext-Medium";color:#333;white-space:nowrap}
+    td.time,td.date{font-family:"Menlo-Regular";font-size:.9em;color:#545454;white-space:nowrap}
+    .summary{color:#878787;margin-bottom:.6em;font-size:.95em}
+    .summary b{color:#333}
+    .empty,.error,.loading{color:#878787;font-style:italic;padding:.8em 0}
+    .error{color:#de4c4f;font-style:normal;font-family:"AvenirNext-Medium"}
+    .error small{display:block;font-family:"AvenirNext-Regular";color:#878787;margin-top:.3em;font-size:.85em}
+</style>
+<body>
+<div class="note-wrapper" x-data="timeflipApp()" x-init="init()">
+    <h1>Timeflip Events</h1>
+
+    <div class="controls">
+        <div class="control grow">
+            <label for="url">ICS URL</label>
+            <input id="url" type="url" x-model="icsUrl" placeholder="https://newapi.timeflip.io/api/ics/...">
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control">
+            <label for="from">From</label>
+            <input id="from" type="date" x-model="fromDate">
+        </div>
+        <div class="control">
+            <label for="to">To</label>
+            <input id="to" type="date" x-model="toDate">
+        </div>
+        <button class="btn" @click="load()" :disabled="loading">
+            <span x-text="loading ? 'Loading...' : 'Reload'"></span>
+        </button>
+        <div class="control inline">
+            <input id="merge" type="checkbox" x-model="mergeShortEnabled">
+            <label for="merge">Merge short tasks (&le; 3 min)</label>
+        </div>
+    </div>
+
+    <template x-if="error">
+        <div class="error">
+            <span x-text="error"></span>
+            <small>If this is a CORS issue, the ICS feed must be fetched from the same origin or via a proxy.</small>
+        </div>
+    </template>
+
+    <template x-if="loading && !loaded">
+        <div class="loading">Fetching ICS feed...</div>
+    </template>
+
+    <template x-if="loaded && !error && filteredEvents.length === 0">
+        <div class="empty">No events in selected range.</div>
+    </template>
+
+    <template x-if="filteredEvents.length > 0">
+        <div>
+            <div class="summary">
+                <b x-text="filteredEvents.length"></b> events &middot;
+                total <b x-text="totalDuration"></b>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Comment</th>
+                        <th>Date</th>
+                        <th>Start</th>
+                        <th>End</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="ev in filteredEvents" :key="ev.uid">
+                        <tr>
+                            <td class="task">Timeflip</td>
+                            <td x-text="ev.summary"></td>
+                            <td class="date" x-text="ev.dateStr"></td>
+                            <td class="time" x-text="ev.startStr"></td>
+                            <td class="time" x-text="ev.endStr"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </template>
+</div>
+
+<script>
+const STORAGE_KEY = 'timeflip_ics_url';
+
+function timeflipApp() {
+    return {
+        icsUrl: '',
+        fromDate: '',
+        toDate: '',
+        loading: false,
+        loaded: false,
+        error: '',
+        events: [],
+        mergeShortEnabled: true,
+
+        init() {
+            const today = this.toIsoDate(new Date());
+            this.fromDate = today;
+            this.toDate = today;
+            this.icsUrl = localStorage.getItem(STORAGE_KEY) || '';
+            this.$watch('icsUrl', v => localStorage.setItem(STORAGE_KEY, v || ''));
+            if (this.icsUrl) this.load();
+        },
+
+        async load() {
+            if (!this.icsUrl) {
+                this.error = 'Please provide an ICS URL.';
+                return;
+            }
+            this.loading = true;
+            this.error = '';
+            try {
+                const res = await fetch(this.icsUrl);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const text = await res.text();
+                this.events = this.parseICS(text);
+                this.loaded = true;
+            } catch (e) {
+                this.error = 'Failed to load ICS feed: ' + e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        parseICS(text) {
+            const unfolded = text.replace(/\r?\n[ \t]/g, '');
+            const lines = unfolded.split(/\r?\n/);
+            const events = [];
+            let cur = null;
+            for (const line of lines) {
+                if (line === 'BEGIN:VEVENT') {
+                    cur = {};
+                } else if (line === 'END:VEVENT') {
+                    if (cur) {
+                        const start = this.parseICSDate(cur.DTSTART);
+                        let end = this.parseICSDate(cur.DTEND);
+                        if (start && (!end || end.getTime() === start.getTime()) && cur.DURATION) {
+                            const ms = this.parseDuration(cur.DURATION);
+                            if (ms != null) end = new Date(start.getTime() + ms);
+                        }
+                        if (!end) end = start;
+                        if (start) {
+                            events.push({
+                                uid: cur.UID || (start.getTime() + '-' + Math.random()),
+                                summary: this.unescapeICS(cur.SUMMARY || ''),
+                                start, end,
+                            });
+                        }
+                    }
+                    cur = null;
+                } else if (cur) {
+                    const idx = line.indexOf(':');
+                    if (idx === -1) continue;
+                    const keyPart = line.slice(0, idx);
+                    const value = line.slice(idx + 1);
+                    const key = keyPart.split(';')[0];
+                    cur[key] = value;
+                }
+            }
+            return events.sort((a, b) => a.start - b.start);
+        },
+
+        parseICSDate(value) {
+            if (!value) return null;
+            const m = value.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?/);
+            if (!m) return null;
+            const [, y, mo, d, h, mi, s, z] = m;
+            if (h === undefined) return new Date(+y, +mo - 1, +d);
+            if (z === 'Z') return new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +s));
+            return new Date(+y, +mo - 1, +d, +h, +mi, +s);
+        },
+
+        parseDuration(value) {
+            if (!value) return null;
+            const m = value.match(/^-?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/);
+            if (!m) return null;
+            const [, w, d, h, mi, s] = m;
+            const totalSec = (+w || 0) * 604800 + (+d || 0) * 86400 + (+h || 0) * 3600 + (+mi || 0) * 60 + (+s || 0);
+            return (value.startsWith('-') ? -totalSec : totalSec) * 1000;
+        },
+
+        unescapeICS(s) {
+            return s.replace(/\\n/gi, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
+        },
+
+        toIsoDate(d) {
+            return d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+        },
+
+        formatTime(d) {
+            return String(d.getHours()).padStart(2, '0') + ':' +
+                String(d.getMinutes()).padStart(2, '0');
+        },
+
+        get filteredEvents() {
+            if (!this.fromDate || !this.toDate) return [];
+            const from = new Date(this.fromDate + 'T00:00:00');
+            const to = new Date(this.toDate + 'T23:59:59.999');
+            let list = this.events.filter(ev => ev.start >= from && ev.start <= to);
+            if (this.mergeShortEnabled) list = this.mergeShortTasks(list);
+            return list.map(ev => ({
+                uid: ev.uid,
+                summary: ev.summary,
+                dateStr: this.toIsoDate(ev.start),
+                startStr: this.formatTime(ev.start),
+                endStr: this.formatTime(ev.end),
+                durationMs: ev.end - ev.start,
+            }));
+        },
+
+        mergeShortTasks(events) {
+            const SHORT_MS = 3 * 60 * 1000;
+            const GAP_MS = 10 * 60 * 1000;
+            const sorted = [...events].sort((a, b) => a.start - b.start);
+            const result = [];
+            for (const task of sorted) {
+                const isShort = (task.end - task.start) <= SHORT_MS;
+                const cur = { ...task, isShort };
+                if (result.length > 0) {
+                    const last = result[result.length - 1];
+                    const gap = cur.start.getTime() - last.end.getTime();
+                    const contiguous = gap < GAP_MS;
+                    if (contiguous) {
+                        if (last.isShort && !cur.isShort) {
+                            cur.start = last.start;
+                            result.pop();
+                            result.push(cur);
+                            continue;
+                        }
+                        if (cur.isShort) {
+                            last.end = cur.end;
+                            continue;
+                        }
+                    }
+                }
+                result.push(cur);
+            }
+            return result;
+        },
+
+        get totalDuration() {
+            const ms = this.filteredEvents.reduce((sum, ev) => sum + ev.durationMs, 0);
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            return h + 'h ' + String(m).padStart(2, '0') + 'm';
+        },
+    };
+}
+</script>
+</body>
+</html>
