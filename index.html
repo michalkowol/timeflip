@@ -28,17 +28,31 @@
     .btn{font:inherit;font-weight:600;padding:.55em 1.2em;border:0;background:#de4c4f;color:#fff;cursor:pointer}
     .btn:hover{background:#c43a3d}
     .btn:disabled{opacity:.5;cursor:not-allowed}
-    table{width:100%;border-collapse:collapse;margin-bottom:1em}
+    table{width:100%;border-collapse:collapse;margin-bottom:1em;table-layout:fixed}
     th{font-weight:600;color:#333;border-bottom:2px solid #dedede;padding:.55em .6em;font-size:.95em}
-    td{padding:.5em .6em;border-bottom:1px solid #ededed;vertical-align:top}
+    td{padding:.5em .6em;border-bottom:1px solid #ededed;vertical-align:top;overflow:hidden;text-overflow:ellipsis}
     tbody tr:hover td{background:#fafafa}
-    td.task{font-weight:600;color:#333;white-space:nowrap}
+    td.task{color:#333;white-space:nowrap}
     td.time,td.date{font-family:'JetBrains Mono','Menlo','Consolas','Monaco',monospace;font-size:.9em;color:#545454;white-space:nowrap}
     .summary{color:#878787;margin-bottom:.6em;font-size:.95em}
     .summary b{color:#333}
     .empty,.error,.loading{color:#878787;font-style:italic;padding:.8em 0}
     .error{color:#de4c4f;font-style:normal;font-weight:600}
     .error small{display:block;font-weight:400;color:#878787;margin-top:.3em;font-size:.85em}
+    tr.clickable{cursor:pointer}
+    tr.clickable:hover td{background:#fafafa}
+    tr.editing td{background:#fff7e6}
+    tr.edit-actions-row td{background:#fff7e6;border-bottom:1px solid #ededed}
+    td input.cell-input{font:inherit;padding:.3em .4em;border:1px solid #dedede;background:#fff;color:#545454;width:100%;min-width:0;display:block}
+    td input.cell-input:focus{outline:none;border-color:#de4c4f}
+    .edit-actions{display:flex;gap:.4em;align-items:center;flex-wrap:wrap}
+    .edit-actions-spacer{flex:1 1 auto}
+    .btn.btn-sm{padding:.35em .7em;font-size:.9em}
+    .btn.btn-secondary{background:#878787}
+    .btn.btn-secondary:hover{background:#666}
+    .btn.btn-link{background:transparent;color:#878787;padding:.35em .4em;font-weight:500;text-decoration:underline}
+    .btn.btn-link:hover{background:transparent;color:#de4c4f}
+    .edited-badge{display:inline-block;margin-left:.4em;padding:0 .45em;border-radius:.7em;background:#fff3cd;color:#7a5b00;font-size:.75em;font-weight:600;vertical-align:middle}
 </style>
 <body>
 <div class="note-wrapper" x-data="timeflipApp()" x-init="init()">
@@ -91,6 +105,13 @@
                 total <b x-text="totalDuration"></b>
             </div>
             <table>
+                <colgroup>
+                    <col style="width:9em">
+                    <col>
+                    <col style="width:10em">
+                    <col style="width:8em">
+                    <col style="width:8em">
+                </colgroup>
                 <thead>
                     <tr>
                         <th>Task</th>
@@ -100,17 +121,68 @@
                         <th>End</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <template x-for="ev in filteredEvents" :key="ev.uid">
-                        <tr>
-                            <td class="task">Timeflip</td>
-                            <td x-text="ev.summary"></td>
-                            <td class="date" x-text="ev.dateStr"></td>
-                            <td class="time" x-text="ev.startStr"></td>
-                            <td class="time" x-text="ev.endStr"></td>
+                <template x-for="ev in filteredEvents" :key="ev.uid">
+                    <tbody>
+                        <tr :class="editingUid === ev.uid ? 'editing' : 'clickable'"
+                            @click="editingUid !== ev.uid && startEdit(ev)">
+                            <td class="task">
+                                <template x-if="editingUid !== ev.uid">
+                                    <span x-text="ev.task"></span>
+                                </template>
+                                <template x-if="editingUid === ev.uid">
+                                    <input class="cell-input" type="text" x-model="editForm.task" @click.stop>
+                                </template>
+                            </td>
+                            <td>
+                                <template x-if="editingUid !== ev.uid">
+                                    <span>
+                                        <span x-text="ev.summary"></span>
+                                        <span x-show="ev.edited" class="edited-badge" title="Edited">edited</span>
+                                    </span>
+                                </template>
+                                <template x-if="editingUid === ev.uid">
+                                    <input class="cell-input" type="text" x-model="editForm.summary" @click.stop>
+                                </template>
+                            </td>
+                            <td class="date">
+                                <template x-if="editingUid !== ev.uid">
+                                    <span x-text="ev.dateStr"></span>
+                                </template>
+                                <template x-if="editingUid === ev.uid">
+                                    <input class="cell-input" type="date" x-model="editForm.dateStr" @click.stop>
+                                </template>
+                            </td>
+                            <td class="time">
+                                <template x-if="editingUid !== ev.uid">
+                                    <span x-text="ev.startStr"></span>
+                                </template>
+                                <template x-if="editingUid === ev.uid">
+                                    <input class="cell-input" type="time" x-model="editForm.startStr" @click.stop>
+                                </template>
+                            </td>
+                            <td class="time">
+                                <template x-if="editingUid !== ev.uid">
+                                    <span x-text="ev.endStr"></span>
+                                </template>
+                                <template x-if="editingUid === ev.uid">
+                                    <input class="cell-input" type="time" x-model="editForm.endStr" @click.stop>
+                                </template>
+                            </td>
                         </tr>
-                    </template>
-                </tbody>
+                        <template x-if="editingUid === ev.uid">
+                            <tr class="edit-actions-row">
+                                <td colspan="5">
+                                    <div class="edit-actions">
+                                        <button x-show="ev.edited" class="btn btn-sm btn-link" @click.stop="resetEdit(ev)">Reset</button>
+                                        <span class="edit-actions-spacer"></span>
+                                        <button class="btn btn-sm btn-secondary" @click.stop="cancelEdit()">Cancel</button>
+                                        <button class="btn btn-sm" @click.stop="saveEdit(ev)">Save</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </template>
             </table>
         </div>
     </template>
@@ -118,6 +190,7 @@
 
 <script>
 const STORAGE_KEY = 'timeflip_ics_url';
+const EDITS_KEY = 'timeflip_event_edits';
 
 function timeflipApp() {
     return {
@@ -129,14 +202,95 @@ function timeflipApp() {
         error: '',
         events: [],
         mergeShortEnabled: true,
+        edits: {},
+        editingUid: null,
+        editForm: { task: '', summary: '', dateStr: '', startStr: '', endStr: '' },
 
         init() {
             const today = this.toIsoDate(new Date());
             this.fromDate = today;
             this.toDate = today;
             this.icsUrl = localStorage.getItem(STORAGE_KEY) || '';
+            try {
+                this.edits = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}') || {};
+            } catch (_) {
+                this.edits = {};
+            }
             this.$watch('icsUrl', v => localStorage.setItem(STORAGE_KEY, v || ''));
             if (this.icsUrl) this.load();
+        },
+
+        persistEdits() {
+            localStorage.setItem(EDITS_KEY, JSON.stringify(this.edits));
+        },
+
+        applyEdits(events) {
+            return events.map(ev => {
+                const edit = this.edits[ev.uid];
+                if (!edit) return { ...ev, edited: false };
+                return {
+                    ...ev,
+                    task: edit.task != null ? edit.task : ev.task,
+                    summary: edit.summary != null ? edit.summary : ev.summary,
+                    start: edit.startISO ? new Date(edit.startISO) : ev.start,
+                    end: edit.endISO ? new Date(edit.endISO) : ev.end,
+                    edited: true,
+                };
+            });
+        },
+
+        startEdit(ev) {
+            this.editingUid = ev.uid;
+            this.editForm = {
+                task: ev.task,
+                summary: ev.summary,
+                dateStr: ev.dateStr,
+                startStr: ev.startStr,
+                endStr: ev.endStr,
+            };
+        },
+
+        cancelEdit() {
+            this.editingUid = null;
+        },
+
+        saveEdit(ev) {
+            const dateStr = this.editForm.dateStr;
+            const startStr = this.editForm.startStr;
+            const endStr = this.editForm.endStr;
+            if (!dateStr || !startStr || !endStr) {
+                return;
+            }
+            const start = new Date(dateStr + 'T' + startStr + ':00');
+            let end = new Date(dateStr + 'T' + endStr + ':00');
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                return;
+            }
+            if (end < start) {
+                end = new Date(end.getTime() + 24 * 3600 * 1000);
+            }
+            this.edits = {
+                ...this.edits,
+                [this.editingUid]: {
+                    task: this.editForm.task,
+                    summary: this.editForm.summary,
+                    startISO: start.toISOString(),
+                    endISO: end.toISOString(),
+                },
+            };
+            this.persistEdits();
+            this.editingUid = null;
+        },
+
+        resetEdit(ev) {
+            const uid = this.editingUid || ev.uid;
+            if (this.edits[uid]) {
+                const next = { ...this.edits };
+                delete next[uid];
+                this.edits = next;
+                this.persistEdits();
+            }
+            this.editingUid = null;
         },
 
         async load() {
@@ -235,15 +389,18 @@ function timeflipApp() {
             if (!this.fromDate || !this.toDate) return [];
             const from = new Date(this.fromDate + 'T00:00:00');
             const to = new Date(this.toDate + 'T23:59:59.999');
-            let list = this.events.filter(ev => ev.start >= from && ev.start <= to);
+            let list = this.applyEdits(this.events);
+            list = list.filter(ev => ev.start >= from && ev.start <= to);
             if (this.mergeShortEnabled) list = this.mergeShortTasks(list);
             return list.map(ev => ({
                 uid: ev.uid,
+                task: ev.task || 'Timeflip',
                 summary: ev.summary,
                 dateStr: this.toIsoDate(ev.start),
                 startStr: this.formatTime(ev.start),
                 endStr: this.formatTime(ev.end),
                 durationMs: ev.end - ev.start,
+                edited: !!ev.edited,
             }));
         },
 
