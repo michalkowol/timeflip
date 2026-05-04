@@ -52,7 +52,6 @@
     .btn.btn-secondary:hover{background:#666}
     .btn.btn-link{background:transparent;color:#878787;padding:.35em .4em;font-weight:500;text-decoration:underline}
     .btn.btn-link:hover{background:transparent;color:#de4c4f}
-    .edited-badge{display:inline-block;margin-left:.4em;padding:0 .45em;border-radius:.7em;background:#fff3cd;color:#7a5b00;font-size:.75em;font-weight:600;vertical-align:middle}
     .notes-fab{position:fixed;bottom:1.2em;right:1.2em;z-index:100}
     .notes-fab-btn{background:#de4c4f;color:#fff;border:0;padding:.6em 1.1em;cursor:pointer;font:inherit;font-weight:600;border-radius:2em;box-shadow:0 2px 10px rgba(0,0,0,.18);display:inline-flex;align-items:center;gap:.45em}
     .notes-fab-btn:hover{background:#c43a3d}
@@ -150,9 +149,9 @@
                     </tr>
                 </thead>
                 <template x-for="ev in filteredEvents" :key="ev.uid">
-                    <tbody>
+                    <tbody @focusout="handleFocusOut($event, ev)">
                         <tr :class="editingUid === ev.uid ? 'editing' : 'clickable'"
-                            @click="editingUid !== ev.uid && startEdit(ev)">
+                            @click="editingUid !== ev.uid && startEdit(ev, $event)">
                             <td class="task">
                                 <template x-if="editingUid !== ev.uid">
                                     <span x-text="ev.task"></span>
@@ -163,10 +162,7 @@
                             </td>
                             <td>
                                 <template x-if="editingUid !== ev.uid">
-                                    <span>
-                                        <span x-text="ev.summary"></span>
-                                        <span x-show="ev.edited" class="edited-badge" title="Edited">edited</span>
-                                    </span>
+                                    <span x-text="ev.summary"></span>
                                 </template>
                                 <template x-if="editingUid === ev.uid">
                                     <input class="cell-input" type="text" x-model="editForm.summary" @click.stop>
@@ -275,7 +271,7 @@ function timeflipApp() {
             });
         },
 
-        startEdit(ev) {
+        startEdit(ev, event) {
             this.editingUid = ev.uid;
             this.editForm = {
                 task: ev.task,
@@ -284,10 +280,49 @@ function timeflipApp() {
                 startStr: ev.startStr,
                 endStr: ev.endStr,
             };
+            let cellIndex = 0;
+            if (event && event.target) {
+                const td = event.target.closest('td');
+                if (td && td.parentNode) {
+                    const idx = [...td.parentNode.children].indexOf(td);
+                    if (idx >= 0) cellIndex = idx;
+                }
+            }
+            this.$nextTick(() => {
+                const row = document.querySelector('tr.editing');
+                if (!row) return;
+                const tds = row.querySelectorAll('td');
+                const target = tds[cellIndex]?.querySelector('input') || row.querySelector('input');
+                if (!target) return;
+                target.focus();
+                if (target.type === 'text') target.select();
+            });
         },
 
         cancelEdit() {
             this.editingUid = null;
+        },
+
+        hasChanges(ev) {
+            const f = this.editForm;
+            return f.task !== ev.task
+                || f.summary !== ev.summary
+                || f.dateStr !== ev.dateStr
+                || f.startStr !== ev.startStr
+                || f.endStr !== ev.endStr;
+        },
+
+        handleFocusOut(event, ev) {
+            if (this.editingUid !== ev.uid) return;
+            const next = event.relatedTarget;
+            if (next && event.currentTarget.contains(next)) return;
+            if (!this.hasChanges(ev)) {
+                this.cancelEdit();
+                return;
+            }
+            if (!this.saveEdit(ev)) {
+                this.cancelEdit();
+            }
         },
 
         saveEdit(ev) {
@@ -295,12 +330,12 @@ function timeflipApp() {
             const startStr = this.editForm.startStr;
             const endStr = this.editForm.endStr;
             if (!dateStr || !startStr || !endStr) {
-                return;
+                return false;
             }
             const start = new Date(dateStr + 'T' + startStr + ':00');
             let end = new Date(dateStr + 'T' + endStr + ':00');
             if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-                return;
+                return false;
             }
             if (end < start) {
                 end = new Date(end.getTime() + 24 * 3600 * 1000);
@@ -316,6 +351,7 @@ function timeflipApp() {
             };
             this.persistEdits();
             this.editingUid = null;
+            return true;
         },
 
         resetEdit(ev) {
