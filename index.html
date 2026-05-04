@@ -53,6 +53,16 @@
     .btn.btn-link{background:transparent;color:#878787;padding:.35em .4em;font-weight:500;text-decoration:underline}
     .btn.btn-link:hover{background:transparent;color:#de4c4f}
     .edited-badge{display:inline-block;margin-left:.4em;padding:0 .45em;border-radius:.7em;background:#fff3cd;color:#7a5b00;font-size:.75em;font-weight:600;vertical-align:middle}
+    .notes-fab{position:fixed;bottom:1.2em;right:1.2em;z-index:100}
+    .notes-fab-btn{background:#de4c4f;color:#fff;border:0;padding:.6em 1.1em;cursor:pointer;font:inherit;font-weight:600;border-radius:2em;box-shadow:0 2px 10px rgba(0,0,0,.18);display:inline-flex;align-items:center;gap:.45em}
+    .notes-fab-btn:hover{background:#c43a3d}
+    .notes-fab-dot{display:inline-block;width:.5em;height:.5em;background:#fff;border-radius:50%}
+    .notes-panel{width:26.4em;max-width:calc(100vw - 2.4em);background:#fff;border:1px solid #dedede;box-shadow:0 6px 24px rgba(0,0,0,.15);display:flex;flex-direction:column;border-radius:.4em;overflow:hidden}
+    .notes-header{display:flex;align-items:center;justify-content:space-between;padding:.5em .8em;background:#f5f5f5;border-bottom:1px solid #dedede}
+    .notes-title{font-weight:600;color:#333;font-size:.95em}
+    .notes-toggle{background:transparent;border:0;cursor:pointer;color:#878787;font-size:1.4em;padding:0 .35em;line-height:1}
+    .notes-toggle:hover{color:#de4c4f}
+    .notes-textarea{border:0;padding:.7em .8em;font:inherit;resize:vertical;min-height:18em;max-height:80vh;outline:none;color:#545454;background:#fff;width:100%;display:block;box-sizing:border-box}
 </style>
 <body>
 <div class="note-wrapper" x-data="timeflipApp()" x-init="init()">
@@ -97,6 +107,24 @@
     <template x-if="loaded && !error && filteredEvents.length === 0">
         <div class="empty">No events in selected range.</div>
     </template>
+
+    <div class="notes-fab">
+        <template x-if="!notesOpen">
+            <button class="notes-fab-btn" @click="notesOpen = true" title="Open notes">
+                <span>Notes</span>
+                <span x-show="notes.trim().length > 0" class="notes-fab-dot" title="Has content"></span>
+            </button>
+        </template>
+        <template x-if="notesOpen">
+            <div class="notes-panel">
+                <div class="notes-header">
+                    <span class="notes-title">Notes</span>
+                    <button class="notes-toggle" @click="notesOpen = false" title="Minimize" aria-label="Minimize">&minus;</button>
+                </div>
+                <textarea class="notes-textarea" x-model="notes" placeholder="Write notes here..." rows="6"></textarea>
+            </div>
+        </template>
+    </div>
 
     <template x-if="filteredEvents.length > 0">
         <div>
@@ -191,6 +219,8 @@
 <script>
 const STORAGE_KEY = 'timeflip_ics_url';
 const EDITS_KEY = 'timeflip_event_edits';
+const NOTES_KEY = 'timeflip_notes';
+const NOTES_OPEN_KEY = 'timeflip_notes_open';
 
 function timeflipApp() {
     return {
@@ -205,6 +235,8 @@ function timeflipApp() {
         edits: {},
         editingUid: null,
         editForm: { task: '', summary: '', dateStr: '', startStr: '', endStr: '' },
+        notes: '',
+        notesOpen: false,
 
         init() {
             const today = this.toIsoDate(new Date());
@@ -216,7 +248,11 @@ function timeflipApp() {
             } catch (_) {
                 this.edits = {};
             }
+            this.notes = localStorage.getItem(NOTES_KEY) || '';
+            this.notesOpen = localStorage.getItem(NOTES_OPEN_KEY) === '1';
             this.$watch('icsUrl', v => localStorage.setItem(STORAGE_KEY, v || ''));
+            this.$watch('notes', v => localStorage.setItem(NOTES_KEY, v || ''));
+            this.$watch('notesOpen', v => localStorage.setItem(NOTES_OPEN_KEY, v ? '1' : '0'));
             if (this.icsUrl) this.load();
         },
 
