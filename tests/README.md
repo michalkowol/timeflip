@@ -8,16 +8,16 @@ run real Alpine, and assert on real DOM/state. Built on Node's built-in test run
 
 ```bash
 cd tests
-npm install
+pnpm install
 ```
 
-`npm install` also downloads a Chromium build for Playwright (~100MB) via the `postinstall` hook.
+`pnpm install` also downloads a Chromium build for Playwright (~100MB) via the `postinstall` hook.
 
 ## Run
 
 ```bash
 # All specs
-npm test
+pnpm test
 
 # A single spec
 node --test specs/notes.test.mjs
@@ -26,36 +26,25 @@ node --test specs/notes.test.mjs
 node --test --test-name-pattern='Autosave' specs/
 ```
 
-## Layout
+## Principles
 
-```
-tests/
-├── helpers.mjs          # launchPage / data / setRange / reload
-├── fixtures/sample.ics  # canned ICS for the stubbed network
-└── specs/*.test.mjs     # one file per feature; each file = a few independent tests
-```
+In order of priority:
 
-## Helpers
+1. **Removability.** Every test is a self-contained block, deletable without touching
+   anything else. Setup, action, and assertions live in the same `test(...)` block.
+   No fixture coupling, no shared state, no test-order dependencies.
+2. **Easy to understand.** Reading a test top-to-bottom should tell you everything it
+   does. Hidden side effects in helpers are the enemy. Prefer a few explicit lines over
+   a clever one-liner that reaches into shared state.
+3. **Easy to modify.** Small surface area in `helpers.mjs`. Magic values get names
+   (`FIXTURE_DATE`). The rule of three: don't extract a helper until the same code
+   appears three times — duplication is cheaper than the wrong abstraction.
 
-- `launchPage(opts)` — fresh browser + page with all network requests stubbed.
-  Returns `{ browser, page }`. Always pair with `t.after(() => browser.close())`.
-- `data(page, fn, arg)` — runs `fn(d, arg)` inside the page where `d` is the Alpine
-  root data. Avoids the `window.Alpine.$data(...)` boilerplate.
-- `setRange(page, from?, to?, mergeShortEnabled?)` — set date range and let it settle.
-- `reload(page)` — reload, wait for Alpine, re-apply default range.
+What this means in practice:
 
-## Test shape
-
-```js
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { launchPage, data } from '../helpers.mjs';
-
-test('what it should do', async (t) => {
-  const { browser, page } = await launchPage();
-  t.after(() => browser.close());
-
-  // ... interact with the page ...
-  assert.equal(await data(page, d => d.editingUid), null);
-});
-```
+- `launchPage` and `data` earn their keep (used in every test, 50+ uses respectively).
+- We do **not** have helpers like `setRange(page)` or `reload(page)` — they hid the magic
+  date and the `mergeShortEnabled = false` side effect. The 4-5 lines they replaced are
+  inlined in the 2-3 tests that need them, where readers can see exactly what's happening.
+- File-local helpers used <3 times are inlined. Helpers used 5+ times in one file
+  (e.g. `storedEdits` in `edit.test.mjs`) stay.

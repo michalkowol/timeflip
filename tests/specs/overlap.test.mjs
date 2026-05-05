@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { launchPage, data, reload } from '../helpers.mjs';
+import { launchPage, data, FIXTURE_DATE } from '../helpers.mjs';
 
 test('Overlapping badge appears for overlapping events', async (t) => {
   const { browser, page } = await launchPage();
@@ -16,7 +16,13 @@ test('Overlapping badge appears for overlapping events', async (t) => {
     window.Alpine.$data(document.querySelector('[x-data]')).events.forEach(e => { ds[e.uid] = true; });
     localStorage.setItem('timeflip_deleted_uids', JSON.stringify(ds));
   });
-  await reload(page);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.Alpine);
+  await data(page, (d, day) => {
+    d.fromDate = d.toDate = day;
+    d.mergeShortEnabled = false;
+  }, FIXTURE_DATE);
+  await page.waitForTimeout(150);
 
   const flags = await data(page, d =>
     d.filteredEvents.map(e => ({ uid: e.uid, overlapping: e.overlapping })),

@@ -1,13 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { launchPage, data, reload } from '../helpers.mjs';
-
-const focusedCell = (page) =>
-  page.evaluate(() => {
-    const a = document.activeElement;
-    const td = a?.closest('td');
-    return td ? { tag: a.tagName, cellIndex: [...td.parentNode.children].indexOf(td) } : null;
-  });
+import { launchPage, data, FIXTURE_DATE } from '../helpers.mjs';
 
 test('"+ Add event" creates a local event in edit mode, sorted in', async (t) => {
   const { browser, page } = await launchPage();
@@ -30,7 +23,11 @@ test('"+ Add event" creates a local event in edit mode, sorted in', async (t) =>
   assert.equal(state.addedCount, 1);
   assert.deepEqual(state.starts, [...state.starts].sort(), 'rows still in chronological order');
 
-  const focused = await focusedCell(page);
+  const focused = await page.evaluate(() => {
+    const a = document.activeElement;
+    const td = a?.closest('td');
+    return td ? { tag: a.tagName, cellIndex: [...td.parentNode.children].indexOf(td) } : null;
+  });
   assert.equal(focused?.tag, 'INPUT');
   assert.equal(focused?.cellIndex, 1, 'autofocus on Comment input (cell 1)');
 
@@ -50,7 +47,13 @@ test('Saved added event survives reload', async (t) => {
       { uid: 'local-pre', task: 'Timeflip', summary: 'Pre-existing', startISO: '2026-05-04T08:00:00.000Z', endISO: '2026-05-04T08:30:00.000Z' },
     ]));
   });
-  await reload(page);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.Alpine);
+  await data(page, (d, day) => {
+    d.fromDate = d.toDate = day;
+    d.mergeShortEnabled = false;
+  }, FIXTURE_DATE);
+  await page.waitForTimeout(150);
 
   const restored = await data(page, d =>
     d.filteredEvents.find(e => e.uid === 'local-pre'),
@@ -83,7 +86,13 @@ test('Delete a calendar event (immediate, no confirm dialog, survives reload)', 
     'deleted UID persisted',
   );
 
-  await reload(page);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.Alpine);
+  await data(page, (d, day) => {
+    d.fromDate = d.toDate = day;
+    d.mergeShortEnabled = false;
+  }, FIXTURE_DATE);
+  await page.waitForTimeout(150);
   assert.equal(
     await data(page, (d, uid) => d.filteredEvents.some(e => e.uid === uid), calUid),
     false,

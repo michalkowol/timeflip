@@ -2,13 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { launchPage, data } from '../helpers.mjs';
 
-const focusedCell = (page) =>
-  page.evaluate(() => {
-    const a = document.activeElement;
-    const td = a?.closest('td');
-    return td ? { tag: a.tagName, cellIndex: [...td.parentNode.children].indexOf(td) } : null;
-  });
-
+// Read `localStorage["timeflip_event_edits"]` as an object. Used >5x in this file.
 const storedEdits = (page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem('timeflip_event_edits') || '{}'));
 
@@ -19,7 +13,11 @@ test('Click row autofocuses the clicked cell and shows edit-actions row', async 
   await page.locator('tbody tr:not(.edit-actions-row) td').nth(1).click();
   await page.waitForTimeout(200);
 
-  const focused = await focusedCell(page);
+  const focused = await page.evaluate(() => {
+    const a = document.activeElement;
+    const td = a?.closest('td');
+    return td ? { tag: a.tagName, cellIndex: [...td.parentNode.children].indexOf(td) } : null;
+  });
   assert.equal(focused?.tag, 'INPUT');
   assert.equal(focused?.cellIndex, 1, 'autofocus targets clicked Comment cell (idx=1)');
 
@@ -36,7 +34,11 @@ test('Click row autofocuses the clicked cell and shows edit-actions row', async 
   await page.locator('tbody tr:not(.edit-actions-row) td').first().click();
   await page.waitForTimeout(200);
 
-  const focusedTask = await focusedCell(page);
+  const focusedTask = await page.evaluate(() => {
+    const a = document.activeElement;
+    const td = a?.closest('td');
+    return td ? { tag: a.tagName, cellIndex: [...td.parentNode.children].indexOf(td) } : null;
+  });
   assert.equal(focusedTask?.tag, 'INPUT');
   assert.equal(focusedTask?.cellIndex, 0);
 });
