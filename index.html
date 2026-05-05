@@ -573,17 +573,38 @@ function timeflipApp() {
             list.sort((a, b) => a.start - b.start);
             if (this.mergeShortEnabled) list = this.mergeShortTasks(list);
             this.markOverlaps(list);
-            return list.map(ev => ({
-                uid: ev.uid,
-                task: ev.task || 'Timeflip',
-                summary: ev.summary,
-                dateStr: this.toIsoDate(ev.start),
-                startStr: this.formatTime(ev.start),
-                endStr: this.formatTime(ev.end),
-                durationMs: ev.end - ev.start,
-                edited: !!ev.edited,
-                overlapping: !!ev.overlapping,
-            }));
+            const taskMap = this.parseTaskMap();
+            return list.map(ev => {
+                let task = ev.task || 'Timeflip';
+                if (task === 'Timeflip') {
+                    const mapped = taskMap.get((ev.summary || '').trim().toLowerCase());
+                    if (mapped) task = mapped;
+                }
+                return {
+                    uid: ev.uid,
+                    task,
+                    summary: ev.summary,
+                    dateStr: this.toIsoDate(ev.start),
+                    startStr: this.formatTime(ev.start),
+                    endStr: this.formatTime(ev.end),
+                    durationMs: ev.end - ev.start,
+                    edited: !!ev.edited,
+                    overlapping: !!ev.overlapping,
+                };
+            });
+        },
+
+        parseTaskMap() {
+            const map = new Map();
+            if (!this.notes) return map;
+            for (const rawLine of this.notes.split(/\r?\n/)) {
+                const idx = rawLine.lastIndexOf('->');
+                if (idx === -1) continue;
+                const key = rawLine.slice(0, idx).trim().toLowerCase();
+                const value = rawLine.slice(idx + 2).trim();
+                if (key && value) map.set(key, value);
+            }
+            return map;
         },
 
         markOverlaps(list) {
