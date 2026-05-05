@@ -631,10 +631,12 @@ function timeflipApp() {
         },
 
         markOverlaps(list) {
+            const toMinute = t => Math.floor(t / 60000);
             for (const ev of list) ev.overlapping = false;
             for (let i = 0; i < list.length; i++) {
+                const endMin = toMinute(list[i].end.getTime());
                 for (let j = i + 1; j < list.length; j++) {
-                    if (list[j].start.getTime() >= list[i].end.getTime()) break;
+                    if (toMinute(list[j].start.getTime()) >= endMin) break;
                     list[i].overlapping = true;
                     list[j].overlapping = true;
                 }

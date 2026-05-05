@@ -41,6 +41,38 @@ test('Overlapping badge appears for overlapping events', async (t) => {
   assert.equal(await page.locator('.overlap-badge:visible').count(), 1);
 });
 
+test('Events touching within the same minute are not overlapping', async (t) => {
+  const { browser, page } = await launchPage();
+  t.after(() => browser.close());
+
+  await data(page, d => {
+    d.events = [
+      // A ends at 10:30:45, B starts at 10:30:15 - both render as "10:30".
+      { uid: 'A', task: 'Timeflip', summary: 'A', start: new Date('2026-05-04T09:00:00Z'), end: new Date('2026-05-04T10:30:45Z') },
+      { uid: 'B', task: 'Timeflip', summary: 'B', start: new Date('2026-05-04T10:30:15Z'), end: new Date('2026-05-04T11:00:00Z') },
+      // C ends at 12:00:00, D starts at 12:00:00 - exact touch, also same minute.
+      { uid: 'C', task: 'Timeflip', summary: 'C', start: new Date('2026-05-04T11:30:00Z'), end: new Date('2026-05-04T12:00:00Z') },
+      { uid: 'D', task: 'Timeflip', summary: 'D', start: new Date('2026-05-04T12:00:00Z'), end: new Date('2026-05-04T12:30:00Z') },
+      // E and F clearly overlap by more than a minute - sanity check.
+      { uid: 'E', task: 'Timeflip', summary: 'E', start: new Date('2026-05-04T13:00:00Z'), end: new Date('2026-05-04T14:00:00Z') },
+      { uid: 'F', task: 'Timeflip', summary: 'F', start: new Date('2026-05-04T13:30:00Z'), end: new Date('2026-05-04T14:30:00Z') },
+    ];
+    d.mergeShortEnabled = false;
+  });
+  await page.waitForTimeout(150);
+
+  const flags = await data(page, d =>
+    d.filteredEvents.map(e => ({ uid: e.uid, overlapping: e.overlapping })),
+  );
+  const flag = uid => flags.find(f => f.uid === uid).overlapping;
+  assert.equal(flag('A'), false);
+  assert.equal(flag('B'), false);
+  assert.equal(flag('C'), false);
+  assert.equal(flag('D'), false);
+  assert.equal(flag('E'), true);
+  assert.equal(flag('F'), true);
+});
+
 test('mergeShortTasks keeps long event duration when short overlaps it', async (t) => {
   const { browser, page } = await launchPage();
   t.after(() => browser.close());
