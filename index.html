@@ -52,6 +52,9 @@
     .btn.btn-secondary:hover{background:#666}
     .btn.btn-link{background:transparent;color:#878787;padding:.35em .4em;font-weight:500;text-decoration:underline}
     .btn.btn-link:hover{background:transparent;color:#de4c4f}
+    .btn.btn-danger{color:#de4c4f}
+    .btn.btn-danger:hover{color:#fff;background:#de4c4f;text-decoration:none}
+    .overlap-badge{display:inline-block;margin-left:.4em;padding:0 .45em;border-radius:.7em;background:#ffe5e5;color:#c43a3d;font-size:.75em;font-weight:600;vertical-align:middle}
     .notes-fab{position:fixed;bottom:1.2em;right:1.2em;z-index:100}
     .notes-fab-btn{background:#de4c4f;color:#fff;border:0;padding:.6em 1.1em;cursor:pointer;font:inherit;font-weight:600;border-radius:2em;box-shadow:0 2px 10px rgba(0,0,0,.18);display:inline-flex;align-items:center;gap:.45em}
     .notes-fab-btn:hover{background:#c43a3d}
@@ -86,6 +89,7 @@
         <button class="btn" @click="load()" :disabled="loading">
             <span x-text="loading ? 'Loading...' : 'Reload'"></span>
         </button>
+        <button class="btn btn-secondary" @click="addEvent()">+ Add event</button>
         <div class="control inline">
             <input id="merge" type="checkbox" x-model="mergeShortEnabled">
             <label for="merge">Merge short tasks (&le; 3 min)</label>
@@ -162,7 +166,10 @@
                             </td>
                             <td>
                                 <template x-if="editingUid !== ev.uid">
-                                    <span x-text="ev.summary"></span>
+                                    <span>
+                                        <span x-text="ev.summary"></span>
+                                        <span x-show="ev.overlapping" class="overlap-badge" title="Overlaps with another event">overlapping</span>
+                                    </span>
                                 </template>
                                 <template x-if="editingUid === ev.uid">
                                     <input class="cell-input" type="text" x-model="editForm.summary" @click.stop>
@@ -197,6 +204,7 @@
                             <tr class="edit-actions-row">
                                 <td colspan="5">
                                     <div class="edit-actions">
+                                        <button class="btn btn-sm btn-link btn-danger" @click.stop="deleteEvent(ev)">Delete</button>
                                         <button x-show="ev.edited" class="btn btn-sm btn-link" @click.stop="resetEdit(ev)">Reset</button>
                                         <span class="edit-actions-spacer"></span>
                                         <button class="btn btn-sm btn-secondary" @click.stop="cancelEdit()">Cancel</button>
@@ -215,6 +223,8 @@
 <script>
 const STORAGE_KEY = 'timeflip_ics_url';
 const EDITS_KEY = 'timeflip_event_edits';
+const ADDED_EVENTS_KEY = 'timeflip_added_events';
+const DELETED_UIDS_KEY = 'timeflip_deleted_uids';
 const NOTES_KEY = 'timeflip_notes';
 const NOTES_OPEN_KEY = 'timeflip_notes_open';
 
@@ -229,6 +239,8 @@ function timeflipApp() {
         events: [],
         mergeShortEnabled: true,
         edits: {},
+        addedEvents: [],
+        deletedUids: {},
         editingUid: null,
         editForm: { task: '', summary: '', dateStr: '', startStr: '', endStr: '' },
         notes: '',
@@ -244,6 +256,16 @@ function timeflipApp() {
             } catch (_) {
                 this.edits = {};
             }
+            try {
+                this.addedEvents = JSON.parse(localStorage.getItem(ADDED_EVENTS_KEY) || '[]') || [];
+            } catch (_) {
+                this.addedEvents = [];
+            }
+            try {
+                this.deletedUids = JSON.parse(localStorage.getItem(DELETED_UIDS_KEY) || '{}') || {};
+            } catch (_) {
+                this.deletedUids = {};
+            }
             this.notes = localStorage.getItem(NOTES_KEY) || '';
             this.notesOpen = localStorage.getItem(NOTES_OPEN_KEY) === '1';
             this.$watch('icsUrl', v => localStorage.setItem(STORAGE_KEY, v || ''));
@@ -254,6 +276,75 @@ function timeflipApp() {
 
         persistEdits() {
             localStorage.setItem(EDITS_KEY, JSON.stringify(this.edits));
+        },
+
+        persistAddedEvents() {
+            localStorage.setItem(ADDED_EVENTS_KEY, JSON.stringify(this.addedEvents));
+        },
+
+        persistDeletedUids() {
+            localStorage.setItem(DELETED_UIDS_KEY, JSON.stringify(this.deletedUids));
+        },
+
+        isAddedEvent(uid) {
+            return this.addedEvents.some(e => e.uid === uid);
+        },
+
+        focusEditCell(cellIndex) {
+            this.$nextTick(() => {
+                const row = document.querySelector('tr.editing');
+                if (!row) return;
+                const tds = row.querySelectorAll('td');
+                const target = tds[cellIndex]?.querySelector('input') || row.querySelector('input');
+                if (!target) return;
+                target.focus();
+                if (target.type === 'text') target.select();
+            });
+        },
+
+        addEvent() {
+            const dateStr = this.toDate || this.toIsoDate(new Date());
+            const start = new Date(dateStr + 'T09:00:00');
+            const end = new Date(dateStr + 'T09:30:00');
+            const uid = `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            this.addedEvents = [
+                ...this.addedEvents,
+                {
+                    uid,
+                    task: 'Timeflip',
+                    summary: '',
+                    startISO: start.toISOString(),
+                    endISO: end.toISOString(),
+                },
+            ];
+            this.persistAddedEvents();
+            this.editingUid = uid;
+            this.editForm = {
+                task: 'Timeflip',
+                summary: '',
+                dateStr,
+                startStr: '09:00',
+                endStr: '09:30',
+            };
+            this.focusEditCell(1);
+        },
+
+        deleteEvent(ev) {
+            if (!window.confirm('Delete this event?')) return;
+            if (this.isAddedEvent(ev.uid)) {
+                this.addedEvents = this.addedEvents.filter(e => e.uid !== ev.uid);
+                this.persistAddedEvents();
+            } else {
+                this.deletedUids = { ...this.deletedUids, [ev.uid]: true };
+                this.persistDeletedUids();
+            }
+            if (this.edits[ev.uid]) {
+                const next = { ...this.edits };
+                delete next[ev.uid];
+                this.edits = next;
+                this.persistEdits();
+            }
+            this.editingUid = null;
         },
 
         applyEdits(events) {
@@ -288,15 +379,7 @@ function timeflipApp() {
                     if (idx >= 0) cellIndex = idx;
                 }
             }
-            this.$nextTick(() => {
-                const row = document.querySelector('tr.editing');
-                if (!row) return;
-                const tds = row.querySelectorAll('td');
-                const target = tds[cellIndex]?.querySelector('input') || row.querySelector('input');
-                if (!target) return;
-                target.focus();
-                if (target.type === 'text') target.select();
-            });
+            this.focusEditCell(cellIndex);
         },
 
         cancelEdit() {
@@ -340,16 +423,32 @@ function timeflipApp() {
             if (end < start) {
                 end = new Date(end.getTime() + 24 * 3600 * 1000);
             }
-            this.edits = {
-                ...this.edits,
-                [this.editingUid]: {
-                    task: this.editForm.task,
-                    summary: this.editForm.summary,
-                    startISO: start.toISOString(),
-                    endISO: end.toISOString(),
-                },
-            };
-            this.persistEdits();
+            const uid = this.editingUid;
+            if (this.isAddedEvent(uid)) {
+                this.addedEvents = this.addedEvents.map(e =>
+                    e.uid === uid
+                        ? {
+                            ...e,
+                            task: this.editForm.task,
+                            summary: this.editForm.summary,
+                            startISO: start.toISOString(),
+                            endISO: end.toISOString(),
+                        }
+                        : e
+                );
+                this.persistAddedEvents();
+            } else {
+                this.edits = {
+                    ...this.edits,
+                    [uid]: {
+                        task: this.editForm.task,
+                        summary: this.editForm.summary,
+                        startISO: start.toISOString(),
+                        endISO: end.toISOString(),
+                    },
+                };
+                this.persistEdits();
+            }
             this.editingUid = null;
             return true;
         },
@@ -461,9 +560,19 @@ function timeflipApp() {
             if (!this.fromDate || !this.toDate) return [];
             const from = new Date(this.fromDate + 'T00:00:00');
             const to = new Date(this.toDate + 'T23:59:59.999');
-            let list = this.applyEdits(this.events);
+            const addedAsEvents = this.addedEvents.map(ae => ({
+                uid: ae.uid,
+                task: ae.task || 'Timeflip',
+                summary: ae.summary || '',
+                start: new Date(ae.startISO),
+                end: new Date(ae.endISO),
+            }));
+            let list = this.applyEdits([...this.events, ...addedAsEvents]);
+            list = list.filter(ev => !this.deletedUids[ev.uid]);
             list = list.filter(ev => ev.start >= from && ev.start <= to);
+            list.sort((a, b) => a.start - b.start);
             if (this.mergeShortEnabled) list = this.mergeShortTasks(list);
+            this.markOverlaps(list);
             return list.map(ev => ({
                 uid: ev.uid,
                 task: ev.task || 'Timeflip',
@@ -473,7 +582,19 @@ function timeflipApp() {
                 endStr: this.formatTime(ev.end),
                 durationMs: ev.end - ev.start,
                 edited: !!ev.edited,
+                overlapping: !!ev.overlapping,
             }));
+        },
+
+        markOverlaps(list) {
+            for (const ev of list) ev.overlapping = false;
+            for (let i = 0; i < list.length; i++) {
+                for (let j = i + 1; j < list.length; j++) {
+                    if (list[j].start.getTime() >= list[i].end.getTime()) break;
+                    list[i].overlapping = true;
+                    list[j].overlapping = true;
+                }
+            }
         },
 
         mergeShortTasks(events) {
@@ -490,13 +611,13 @@ function timeflipApp() {
                     const contiguous = gap < GAP_MS;
                     if (contiguous) {
                         if (last.isShort && !cur.isShort) {
-                            cur.start = last.start;
+                            if (cur.start.getTime() > last.start.getTime()) cur.start = last.start;
                             result.pop();
                             result.push(cur);
                             continue;
                         }
                         if (cur.isShort) {
-                            last.end = cur.end;
+                            if (cur.end.getTime() > last.end.getTime()) last.end = cur.end;
                             continue;
                         }
                     }
