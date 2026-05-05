@@ -187,6 +187,90 @@ test('Freeze only touches events visible in current date range', async (t) => {
   );
 });
 
+test('Comment after comma overrides both task and summary', async (t) => {
+  const { browser, page } = await launchPage({
+    notes: 'Code -> EDEN-199, Scrum meeting',
+  });
+  t.after(() => browser.close());
+
+  const ev = await data(page, d =>
+    d.filteredEvents.find(e => e.task === 'EDEN-199'),
+  );
+  assert.ok(ev, 'event mapped to EDEN-199 exists');
+  assert.equal(ev.task, 'EDEN-199');
+  assert.equal(ev.summary, 'Scrum meeting');
+});
+
+test('Mapping without comma leaves summary untouched', async (t) => {
+  const { browser, page } = await launchPage({ notes: 'Code -> EDEN-6396' });
+  t.after(() => browser.close());
+
+  const ev = await data(page, d =>
+    d.filteredEvents.find(e => e.task === 'EDEN-6396'),
+  );
+  assert.equal(ev.task, 'EDEN-6396');
+  assert.equal(ev.summary, 'Code', 'summary preserved when no comment given');
+});
+
+test('Trailing comma with empty comment is treated as no comment', async (t) => {
+  const { browser, page } = await launchPage({ notes: 'Code -> EDEN-1,   ' });
+  t.after(() => browser.close());
+
+  const ev = await data(page, d =>
+    d.filteredEvents.find(e => e.task === 'EDEN-1'),
+  );
+  assert.equal(ev.task, 'EDEN-1');
+  assert.equal(ev.summary, 'Code', 'empty comment does not blank out summary');
+});
+
+test('Comment containing commas is preserved verbatim after first comma', async (t) => {
+  const { browser, page } = await launchPage({
+    notes: 'Code -> EDEN-2, hello, world',
+  });
+  t.after(() => browser.close());
+
+  const ev = await data(page, d =>
+    d.filteredEvents.find(e => e.task === 'EDEN-2'),
+  );
+  assert.equal(ev.summary, 'hello, world');
+});
+
+test('Freezing persists both task and comment into edits', async (t) => {
+  const { browser, page } = await launchPage();
+  t.after(() => browser.close());
+
+  const codeUid = await data(page, d => d.filteredEvents.find(e => e.summary === 'Code')?.uid);
+
+  await page.click('.notes-fab .notes-fab-btn');
+  await page.waitForTimeout(150);
+  await page.locator('.notes-textarea').focus();
+  await page.locator('.notes-textarea').fill('Code -> EDEN-199, Scrum meeting');
+  await page.locator('input#from').focus();
+  await page.waitForTimeout(250);
+
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('timeflip_event_edits') || '{}'));
+  assert.equal(stored[codeUid]?.task, 'EDEN-199');
+  assert.equal(stored[codeUid]?.summary, 'Scrum meeting');
+});
+
+test('Freezing without comment only writes task, leaves summary untouched', async (t) => {
+  const { browser, page } = await launchPage();
+  t.after(() => browser.close());
+
+  const codeUid = await data(page, d => d.filteredEvents.find(e => e.summary === 'Code')?.uid);
+
+  await page.click('.notes-fab .notes-fab-btn');
+  await page.waitForTimeout(150);
+  await page.locator('.notes-textarea').focus();
+  await page.locator('.notes-textarea').fill('Code -> EDEN-6396');
+  await page.locator('input#from').focus();
+  await page.waitForTimeout(250);
+
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('timeflip_event_edits') || '{}'));
+  assert.equal(stored[codeUid]?.task, 'EDEN-6396');
+  assert.equal(stored[codeUid]?.summary, undefined, 'no summary key without explicit comment');
+});
+
 test('Reset on a frozen entry restores dynamic mapping', async (t) => {
   const { browser, page } = await launchPage({ notes: 'Code -> EDEN-1' });
   t.after(() => browser.close());

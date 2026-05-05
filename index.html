@@ -575,14 +575,18 @@ function timeflipApp() {
             const taskMap = this.parseTaskMap();
             return list.map(ev => {
                 let task = ev.task || 'Timeflip';
+                let summary = ev.summary;
                 if (task === 'Timeflip') {
                     const mapped = taskMap.get((ev.summary || '').trim().toLowerCase());
-                    if (mapped) task = mapped;
+                    if (mapped) {
+                        task = mapped.task;
+                        if (mapped.summary != null) summary = mapped.summary;
+                    }
                 }
                 return {
                     uid: ev.uid,
                     task,
-                    summary: ev.summary,
+                    summary,
                     dateStr: this.toIsoDate(ev.start),
                     startStr: this.formatTime(ev.start),
                     endStr: this.formatTime(ev.end),
@@ -600,8 +604,15 @@ function timeflipApp() {
                 const idx = rawLine.lastIndexOf('->');
                 if (idx === -1) continue;
                 const key = rawLine.slice(0, idx).trim().toLowerCase();
-                const value = rawLine.slice(idx + 2).trim();
-                if (key && value) map.set(key, value);
+                const rhs = rawLine.slice(idx + 2).trim();
+                if (!key || !rhs) continue;
+                const commaIdx = rhs.indexOf(',');
+                const task = (commaIdx === -1 ? rhs : rhs.slice(0, commaIdx)).trim();
+                const comment = commaIdx === -1 ? '' : rhs.slice(commaIdx + 1).trim();
+                if (!task) continue;
+                const entry = { task };
+                if (comment) entry.summary = comment;
+                map.set(key, entry);
             }
             return map;
         },
@@ -621,7 +632,9 @@ function timeflipApp() {
                 if ((ev.task || 'Timeflip') !== 'Timeflip') continue;
                 const mapped = taskMap.get((ev.summary || '').trim().toLowerCase());
                 if (!mapped) continue;
-                nextEdits[ev.uid] = { ...(nextEdits[ev.uid] || {}), task: mapped };
+                const next = { ...(nextEdits[ev.uid] || {}), task: mapped.task };
+                if (mapped.summary != null) next.summary = mapped.summary;
+                nextEdits[ev.uid] = next;
                 changed = true;
             }
             if (changed) {
