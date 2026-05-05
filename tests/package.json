@@ -6,13 +6,7 @@
   "description": "End-to-end tests for the Timeflip Events viewer",
   "scripts": {
     "postinstall": "playwright install chromium",
-    "test": "node run-all.mjs",
-    "test:edit": "node specs/edit.spec.mjs",
-    "test:add-delete": "node specs/add-delete.spec.mjs",
-    "test:overlap": "node specs/overlap.spec.mjs",
-    "test:task-mapping": "node specs/task-mapping.spec.mjs",
-    "test:notes": "node specs/notes.spec.mjs",
-    "test:layout": "node specs/layout.spec.mjs"
+    "test": "node --test"
   },
   "devDependencies": {
     "alpinejs": "^3.13.5",
