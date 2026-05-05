@@ -124,7 +124,7 @@
                     <span class="notes-title">Notes</span>
                     <button class="notes-toggle" @click="notesOpen = false" title="Minimize" aria-label="Minimize">&minus;</button>
                 </div>
-                <textarea class="notes-textarea" x-model="notes" placeholder="Write notes here..." rows="6"></textarea>
+                <textarea class="notes-textarea" x-model="notes" @blur="freezeMappings()" placeholder="Write notes here..." rows="6"></textarea>
             </div>
         </template>
     </div>
@@ -604,6 +604,30 @@ function timeflipApp() {
                 if (key && value) map.set(key, value);
             }
             return map;
+        },
+
+        freezeMappings() {
+            if (!this.fromDate || !this.toDate) return;
+            const taskMap = this.parseTaskMap();
+            if (taskMap.size === 0) return;
+            const from = new Date(this.fromDate + 'T00:00:00');
+            const to = new Date(this.toDate + 'T23:59:59.999');
+            const visible = this.applyEdits(this.events)
+                .filter(ev => !this.deletedUids[ev.uid])
+                .filter(ev => ev.start >= from && ev.start <= to);
+            const nextEdits = { ...this.edits };
+            let changed = false;
+            for (const ev of visible) {
+                if ((ev.task || 'Timeflip') !== 'Timeflip') continue;
+                const mapped = taskMap.get((ev.summary || '').trim().toLowerCase());
+                if (!mapped) continue;
+                nextEdits[ev.uid] = { ...(nextEdits[ev.uid] || {}), task: mapped };
+                changed = true;
+            }
+            if (changed) {
+                this.edits = nextEdits;
+                this.persistEdits();
+            }
         },
 
         markOverlaps(list) {
