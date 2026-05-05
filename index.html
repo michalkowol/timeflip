@@ -330,7 +330,6 @@ function timeflipApp() {
         },
 
         deleteEvent(ev) {
-            if (!window.confirm('Delete this event?')) return;
             if (this.isAddedEvent(ev.uid)) {
                 this.addedEvents = this.addedEvents.filter(e => e.uid !== ev.uid);
                 this.persistAddedEvents();
