@@ -330,6 +330,8 @@ function timeflipApp() {
         },
 
         deleteEvent(ev) {
+            const label = (ev.summary || ev.task || 'this event').toString().trim() || 'this event';
+            if (!window.confirm('Delete "' + label + '"?')) return;
             if (this.isAddedEvent(ev.uid)) {
                 this.addedEvents = this.addedEvents.filter(e => e.uid !== ev.uid);
                 this.persistAddedEvents();

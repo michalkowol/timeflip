@@ -61,20 +61,23 @@ test('Saved added event survives reload', async (t) => {
   assert.equal(restored?.summary, 'Pre-existing');
 });
 
-test('Delete a calendar event (immediate, no confirm dialog, survives reload)', async (t) => {
-  let dialogCount = 0;
+test('Delete a calendar event (after confirm, survives reload)', async (t) => {
+  const dialogs = [];
   const { browser, page } = await launchPage({ acceptDialogs: false });
   t.after(() => browser.close());
-  page.on('dialog', d => { dialogCount++; d.dismiss(); });
+  page.on('dialog', d => { dialogs.push({ type: d.type(), message: d.message() }); d.accept(); });
 
   const calUid = await data(page, d => d.filteredEvents[0].uid);
+  const calSummary = await data(page, d => d.filteredEvents[0].summary);
 
   await page.evaluate(() => document.querySelectorAll('tbody tr:not(.edit-actions-row)')[0].click());
   await page.waitForTimeout(200);
   await page.click('button:has-text("Delete")');
   await page.waitForTimeout(300);
 
-  assert.equal(dialogCount, 0, 'no confirm dialog shown');
+  assert.equal(dialogs.length, 1, 'confirm dialog shown');
+  assert.equal(dialogs[0].type, 'confirm');
+  assert.ok(dialogs[0].message.includes(calSummary), `message mentions "${calSummary}"`);
   assert.equal(
     await data(page, (d, uid) => d.filteredEvents.some(e => e.uid === uid), calUid),
     false,
@@ -97,6 +100,30 @@ test('Delete a calendar event (immediate, no confirm dialog, survives reload)', 
     await data(page, (d, uid) => d.filteredEvents.some(e => e.uid === uid), calUid),
     false,
     'still hidden after reload',
+  );
+});
+
+test('Dismissing the confirm dialog cancels the delete', async (t) => {
+  const { browser, page } = await launchPage({ acceptDialogs: false });
+  t.after(() => browser.close());
+  page.on('dialog', d => d.dismiss());
+
+  const calUid = await data(page, d => d.filteredEvents[0].uid);
+
+  await page.evaluate(() => document.querySelectorAll('tbody tr:not(.edit-actions-row)')[0].click());
+  await page.waitForTimeout(200);
+  await page.click('button:has-text("Delete")');
+  await page.waitForTimeout(300);
+
+  assert.equal(
+    await data(page, (d, uid) => d.filteredEvents.some(e => e.uid === uid), calUid),
+    true,
+    'event still visible when delete is cancelled',
+  );
+  assert.deepEqual(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('timeflip_deleted_uids') || '{}')),
+    {},
+    'no UID persisted on cancel',
   );
 });
 
