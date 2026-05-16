@@ -2,6 +2,8 @@
 
 A single-page Alpine.js viewer for a Timeflip ICS feed. Pick a date range and the page shows the entries in a `Task | Comment | Date | Start | End` table, where `Task` is always `Timeflip` and `Comment` is the event's `SUMMARY`.
 
+![Timeflip Events screenshot](tests/timeflip.jpg)
+
 ## Short-task merging
 
 Timeflip tracks every cube flip, which means real activity is often peppered with very brief entries (accidental flips, momentary status changes). When the **Merge short tasks** checkbox is enabled (default on), the viewer collapses these tiny entries into their neighbors so the table reads as actual blocks of work.
