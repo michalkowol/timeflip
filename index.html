@@ -86,10 +86,13 @@
             <label for="to">To</label>
             <input id="to" type="date" x-model="toDate">
         </div>
-        <button class="btn" @click="load()" :disabled="loading">
+        <button class="btn btn-secondary" @click="load()" :disabled="loading">
             <span x-text="loading ? 'Loading...' : 'Reload'"></span>
         </button>
         <button class="btn btn-secondary" @click="addEvent()">+ Add event</button>
+        <button class="btn" @click="copyTsv()" :disabled="filteredEvents.length === 0">
+            <span x-text="copyTsvLabel"></span>
+        </button>
         <div class="control inline">
             <input id="merge" type="checkbox" x-model="mergeShortEnabled">
             <label for="merge">Merge short tasks (&le; 3 min)</label>
@@ -245,6 +248,7 @@ function timeflipApp() {
         editForm: { task: '', summary: '', dateStr: '', startStr: '', endStr: '' },
         notes: '',
         notesOpen: false,
+        copyTsvLabel: 'Copy TSV',
 
         init() {
             const today = this.toIsoDate(new Date());
@@ -327,6 +331,36 @@ function timeflipApp() {
                 endStr: '09:30',
             };
             this.focusEditCell(1);
+        },
+
+        buildTsv() {
+            const header = ['Task', 'Comment', 'Date', 'Start', 'End'];
+            const escape = v => String(v == null ? '' : v).replace(/[\t\r\n]/g, ' ');
+            const rows = this.filteredEvents.map(ev => [ev.task, ev.summary, ev.dateStr, ev.startStr, ev.endStr].map(escape).join('\t'));
+            return [header.join('\t'), ...rows].join('\n');
+        },
+
+        async copyTsv() {
+            const tsv = this.buildTsv();
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(tsv);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = tsv;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                this.copyTsvLabel = 'Copied!';
+            } catch (e) {
+                console.error('Failed to copy TSV to clipboard', e);
+                this.copyTsvLabel = 'Copy failed';
+            }
+            setTimeout(() => { this.copyTsvLabel = 'Copy TSV'; }, 1500);
         },
 
         deleteEvent(ev) {
