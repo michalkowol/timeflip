@@ -334,10 +334,10 @@ function timeflipApp() {
         },
 
         buildTsv() {
-            const header = ['Task', 'Comment', 'Date', 'Start', 'End'];
             const escape = v => String(v == null ? '' : v).replace(/[\t\r\n]/g, ' ');
-            const rows = this.filteredEvents.map(ev => [ev.task, ev.summary, ev.dateStr, ev.startStr, ev.endStr].map(escape).join('\t'));
-            return [header.join('\t'), ...rows].join('\n');
+            return this.filteredEvents
+                .map(ev => [ev.task, ev.summary, ev.dateStr, ev.startStr, ev.endStr].map(escape).join('\t'))
+                .join('\n');
         },
 
         async copyTsv() {
