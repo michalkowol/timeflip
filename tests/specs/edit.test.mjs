@@ -155,6 +155,38 @@ test('Reset removes overlay from localStorage', async (t) => {
   assert.equal((await storedEdits(page))[calUid], undefined);
 });
 
+test('Editing only start time keeps end time linked to ICS feed', async (t) => {
+  const { browser, page } = await launchPage();
+  t.after(() => browser.close());
+
+  const target = await data(page, d => ({
+    uid: d.filteredEvents[0].uid,
+    startStr: d.filteredEvents[0].startStr,
+    endStr: d.filteredEvents[0].endStr,
+  }));
+
+  await page.locator('tbody tr:not(.edit-actions-row) td').nth(3).click();
+  await page.waitForTimeout(200);
+  await data(page, d => { d.editForm.startStr = '09:00'; });
+  await page.click('button:has-text("Save")');
+  await page.waitForTimeout(200);
+
+  const stored = await storedEdits(page);
+  assert.ok(stored[target.uid]?.startISO, 'startISO is persisted');
+  assert.equal(stored[target.uid]?.endISO, undefined, 'endISO is not persisted so end follows ICS feed');
+
+  await data(page, (d, uid) => {
+    const ev = d.events.find(e => e.uid === uid);
+    ev.end = new Date(ev.end.getTime() + 30 * 60 * 1000);
+  }, target.uid);
+
+  const refreshed = await data(page, (d, uid) =>
+    d.filteredEvents.find(e => e.uid === uid), target.uid);
+
+  assert.equal(refreshed.startStr, '09:00', 'edited start time is kept');
+  assert.notEqual(refreshed.endStr, target.endStr, 'end time follows ICS feed update');
+});
+
 test('Edited Task cell value persists', async (t) => {
   const { browser, page } = await launchPage();
   t.after(() => browser.close());

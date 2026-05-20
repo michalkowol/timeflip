@@ -473,14 +473,16 @@ function timeflipApp() {
                 );
                 this.persistAddedEvents();
             } else {
+                const dateChanged = dateStr !== ev.dateStr;
+                const edit = {
+                    task: this.editForm.task,
+                    summary: this.editForm.summary,
+                };
+                if (dateChanged || startStr !== ev.startStr) edit.startISO = start.toISOString();
+                if (dateChanged || endStr !== ev.endStr) edit.endISO = end.toISOString();
                 this.edits = {
                     ...this.edits,
-                    [uid]: {
-                        task: this.editForm.task,
-                        summary: this.editForm.summary,
-                        startISO: start.toISOString(),
-                        endISO: end.toISOString(),
-                    },
+                    [uid]: edit,
                 };
                 this.persistEdits();
             }
