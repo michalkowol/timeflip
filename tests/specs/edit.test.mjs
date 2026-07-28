@@ -187,6 +187,35 @@ test('Editing only start time keeps end time linked to ICS feed', async (t) => {
   assert.notEqual(refreshed.endStr, target.endStr, 'end time follows ICS feed update');
 });
 
+test('Editing start then end in separate saves keeps both times', async (t) => {
+  const { browser, page } = await launchPage();
+  t.after(() => browser.close());
+
+  const targetUid = await data(page, d => d.filteredEvents[0].uid);
+
+  await page.locator('tbody tr:not(.edit-actions-row) td').nth(3).click();
+  await page.waitForTimeout(200);
+  await data(page, d => { d.editForm.startStr = '09:00'; });
+  await page.click('button:has-text("Save")');
+  await page.waitForTimeout(200);
+
+  await page.locator('tbody tr:not(.edit-actions-row) td').nth(4).click();
+  await page.waitForTimeout(200);
+  assert.equal(await data(page, d => d.editingUid), targetUid, 'second edit reopens the same row');
+  await data(page, d => { d.editForm.endStr = '10:00'; });
+  await page.click('button:has-text("Save")');
+  await page.waitForTimeout(200);
+
+  const stored = await storedEdits(page);
+  assert.ok(stored[targetUid]?.startISO, 'startISO from the first save survives');
+  assert.ok(stored[targetUid]?.endISO, 'endISO from the second save is persisted');
+
+  const refreshed = await data(page, (d, uid) =>
+    d.filteredEvents.find(e => e.uid === uid), targetUid);
+  assert.equal(refreshed.startStr, '09:00');
+  assert.equal(refreshed.endStr, '10:00');
+});
+
 test('Edited Task cell value persists', async (t) => {
   const { browser, page } = await launchPage();
   t.after(() => browser.close());

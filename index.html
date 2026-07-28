@@ -475,6 +475,7 @@ function timeflipApp() {
             } else {
                 const dateChanged = dateStr !== ev.dateStr;
                 const edit = {
+                    ...this.edits[uid],
                     task: this.editForm.task,
                     summary: this.editForm.summary,
                 };
