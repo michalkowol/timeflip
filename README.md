@@ -4,7 +4,7 @@ A single-page Alpine.js viewer for a Timeflip ICS feed. Pick a date range and th
 
 Live: <https://michalkowol.github.io/timeflip/>
 
-![Timeflip Events screenshot](tests/timeflip.jpg)
+![Timeflip Events screenshot](docs/timeflip.jpg)
 
 ## Short-task merging
 
@@ -28,3 +28,16 @@ Entries are sorted by start time and processed in order, building a result list.
    - **Both are long** → no merge; push `cur` as a new entry.
 
 A merged entry keeps an `isShort` flag that stays `true` only as long as it was built exclusively from short pieces. The first long task that joins it flips the flag to `false`, which is what makes case 3a work for chains like `short → short → long`.
+
+## Time drift
+
+If the Timeflip device clock runs off, every entry in the feed is shifted by a constant amount. Put a config line in the **Notes** panel to correct it:
+
+```
+config.time_drift: 7m
+```
+
+- Shifts `start` and `end` of every entry coming from the ICS feed, so durations are unchanged.
+- A positive value moves entries **forward** (later), a negative one moves them **back**: `config.time_drift: -7m`.
+- Units: `s`, `m`, `h` — a bare number means minutes. Fractions are allowed (`2.5m`). The last valid `config.time_drift` line in the notes wins.
+- Manually added entries and times you edited yourself are left alone — the drift only corrects what the device reported.

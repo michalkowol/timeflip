@@ -605,7 +605,7 @@ function timeflipApp() {
                 start: new Date(ae.startISO),
                 end: new Date(ae.endISO),
             }));
-            let list = this.applyEdits([...this.events, ...addedAsEvents]);
+            let list = this.applyEdits([...this.driftedEvents(), ...addedAsEvents]);
             list = list.filter(ev => !this.deletedUids[ev.uid]);
             list = list.filter(ev => ev.start >= from && ev.start <= to);
             list.sort((a, b) => a.start - b.start);
@@ -636,6 +636,28 @@ function timeflipApp() {
             });
         },
 
+        parseTimeDrift() {
+            let ms = 0;
+            if (!this.notes) return ms;
+            const unitMs = { s: 1000, m: 60000, h: 3600000 };
+            for (const rawLine of this.notes.split(/\r?\n/)) {
+                const m = rawLine.match(/^\s*config\.time_drift\s*:\s*([+-]?\d+(?:\.\d+)?)\s*([smh])?\s*$/i);
+                if (!m) continue;
+                ms = Math.round(parseFloat(m[1]) * unitMs[(m[2] || 'm').toLowerCase()]);
+            }
+            return ms;
+        },
+
+        driftedEvents() {
+            const driftMs = this.parseTimeDrift();
+            if (!driftMs) return this.events;
+            return this.events.map(ev => ({
+                ...ev,
+                start: new Date(ev.start.getTime() + driftMs),
+                end: new Date(ev.end.getTime() + driftMs),
+            }));
+        },
+
         parseTaskMap() {
             const map = new Map();
             if (!this.notes) return map;
@@ -662,7 +684,7 @@ function timeflipApp() {
             if (taskMap.size === 0) return;
             const from = new Date(this.fromDate + 'T00:00:00');
             const to = new Date(this.toDate + 'T23:59:59.999');
-            const visible = this.applyEdits(this.events)
+            const visible = this.applyEdits(this.driftedEvents())
                 .filter(ev => !this.deletedUids[ev.uid])
                 .filter(ev => ev.start >= from && ev.start <= to);
             const nextEdits = { ...this.edits };
