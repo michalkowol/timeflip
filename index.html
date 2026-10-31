@@ -87,6 +87,7 @@
             <input id="to" type="date" x-model="toDate">
         </div>
         <button class="btn btn-secondary" @click="previousDay()" :disabled="!fromDate || !toDate">&larr; Previous day</button>
+        <button class="btn btn-secondary" @click="nextDay()" :disabled="!fromDate || !toDate">Next day &rarr;</button>
         <button class="btn btn-secondary" @click="load()" :disabled="loading">
             <span x-text="loading ? 'Loading...' : 'Reload'"></span>
         </button>
@@ -317,6 +318,12 @@ function timeflipApp() {
             if (!this.fromDate || !this.toDate) return;
             this.fromDate = this.shiftIsoDate(this.fromDate, -1);
             this.toDate = this.shiftIsoDate(this.toDate, -1);
+        },
+
+        nextDay() {
+            if (!this.fromDate || !this.toDate) return;
+            this.fromDate = this.shiftIsoDate(this.fromDate, 1);
+            this.toDate = this.shiftIsoDate(this.toDate, 1);
         },
 
         addEvent() {
