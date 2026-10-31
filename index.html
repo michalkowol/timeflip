@@ -88,6 +88,9 @@
         </div>
         <button class="btn btn-secondary" @click="previousDay()" :disabled="!fromDate || !toDate">&larr; Previous day</button>
         <button class="btn btn-secondary" @click="nextDay()" :disabled="!fromDate || !toDate">Next day &rarr;</button>
+    </div>
+
+    <div class="controls">
         <button class="btn btn-secondary" @click="load()" :disabled="loading">
             <span x-text="loading ? 'Loading...' : 'Reload'"></span>
         </button>
