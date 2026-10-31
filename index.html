@@ -86,6 +86,7 @@
             <label for="to">To</label>
             <input id="to" type="date" x-model="toDate">
         </div>
+        <button class="btn btn-secondary" @click="previousDay()" :disabled="!fromDate || !toDate">&larr; Previous day</button>
         <button class="btn btn-secondary" @click="load()" :disabled="loading">
             <span x-text="loading ? 'Loading...' : 'Reload'"></span>
         </button>
@@ -304,6 +305,18 @@ function timeflipApp() {
                 target.focus();
                 if (target.type === 'text') target.select();
             });
+        },
+
+        shiftIsoDate(dateStr, days) {
+            const d = new Date(dateStr + 'T00:00:00');
+            d.setDate(d.getDate() + days);
+            return this.toIsoDate(d);
+        },
+
+        previousDay() {
+            if (!this.fromDate || !this.toDate) return;
+            this.fromDate = this.shiftIsoDate(this.fromDate, -1);
+            this.toDate = this.shiftIsoDate(this.toDate, -1);
         },
 
         addEvent() {
